@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 @Repository
 public class PostRepository implements IPostRepository {
@@ -15,11 +16,11 @@ public class PostRepository implements IPostRepository {
     private List<Post> posts = new CopyOnWriteArrayList();
 
     public List<Post> all() {
-        return this.posts;
+        return posts.stream().filter(post -> !post.deleted()).collect(Collectors.toList());
     }
 
     public Optional<Post> getById(long id) {
-        return posts.stream().filter(post -> post.getId() == id).findFirst();
+        return posts.stream().filter(post -> post.getId() == id).filter(post -> !post.deleted()).findFirst();
     }
 
     public Post save(Post post) {
@@ -28,7 +29,7 @@ public class PostRepository implements IPostRepository {
             postId.addAndGet(1);
         } else {
             for (Post searchPost: this.posts) {
-                if (post.getId() == searchPost.getId()){
+                if (post.getId() == searchPost.getId() && !post.deleted()){
                     searchPost.setContent(post.getContent());
                     return searchPost;
                 }
@@ -44,7 +45,7 @@ public class PostRepository implements IPostRepository {
         for (int i = 0; i < this.posts.size(); i++) {
             Post searchPost = this.posts.get(i);
             if (searchPost.getId() == id) {
-                this.posts.remove(i);
+                searchPost.delete();
             }
         }
     }
